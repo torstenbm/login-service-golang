@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"login-service/controller"
+	"login-service2/controller"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
