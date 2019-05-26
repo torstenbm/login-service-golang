@@ -2,7 +2,7 @@ package controller
 
 import (
 	"encoding/json"
-	"login-service2/model"
+	"login-service/model"
 	"net/http"
 	"time"
 
