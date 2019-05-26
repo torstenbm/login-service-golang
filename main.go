@@ -5,20 +5,20 @@ import (
 	"log"
 	"login-service/controller"
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "This is the login microservice build in go\n")
 }
 func main() {
 	router := httprouter.New()
-	router.GET("/", Index)
+	router.GET("/", index)
 	router.POST("/register", controller.RegisterUser)
 	router.POST("/login", controller.LoginUser)
 	router.POST("/logout", controller.LogoutUser)
 
-	fmt.Println("Server running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(os.Getenv("PORT"), router))
 }
