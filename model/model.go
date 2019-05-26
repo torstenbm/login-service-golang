@@ -46,70 +46,71 @@ func (uf UserFactory) CreateUser(UserName string, FirstName string, LastName str
 type UserRepository struct{}
 
 // WriteUserToDb : Stores user-object in database
-func (ur UserRepository) WriteUserToDb(user User) {
+func (ur UserRepository) WriteUserToDb(user User) error {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("model/go-login-service-firebase-adminsdk-rkpp7-075307324f.json")
 
 	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
-		log.Fatalf("error initializing firebase: %v\n", err)
+		return err
 	}
 
 	client, err := app.Firestore(ctx)
 	if err != nil {
-		log.Fatalf("error getting Auth client: %v\n", err)
+		return err
 	}
 
 	_, err = client.Collection("Users").Doc(user.UserName).Set(ctx, user)
 	if err != nil {
-		log.Fatalf("error writing to firebase: %v\n", err)
+		return err
 	}
+	return err
 }
 
 // GetUserFromDb : Retrieves user object from database by username
-func (ur UserRepository) GetUserFromDb(UserName string) User {
+func (ur UserRepository) GetUserFromDb(UserName string) (User, error) {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("model/go-login-service-firebase-adminsdk-rkpp7-075307324f.json")
+	var user User
 
 	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
-		log.Fatalf("error initializing firebase: %v\n", err)
+		return user, err
 	}
 
 	client, err := app.Firestore(ctx)
 	if err != nil {
-		log.Fatalf("error getting Auth client: %v\n", err)
+		return user, err
 	}
 
-	var user User
 	snapshot, err := client.Collection("Users").Doc(UserName).Get(ctx)
 	if err != nil {
-		log.Fatalf("error retrieving user from database: %v\n", err)
+		return user, err
 	}
 	mapstructure.Decode(snapshot.Data(), &user)
 
-	return user
+	return user, err
 }
 
 // IsUserNameTaken : Returns true if taken, false if available
-func (ur UserRepository) IsUserNameTaken(UserName string) bool {
+func (ur UserRepository) IsUserNameTaken(UserName string) (bool, error) {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("model/go-login-service-firebase-adminsdk-rkpp7-075307324f.json")
 
 	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
-		log.Fatalf("error initializing firebase: %v\n", err)
+		return true, err
 	}
 
 	client, err := app.Firestore(ctx)
 	if err != nil {
-		log.Fatalf("error getting Auth client: %v\n", err)
+		return true, err
 	}
 
 	_, err = client.Collection("Users").Doc(UserName).Get(ctx)
 	if err != nil {
-		return false
+		return false, err
 	}
 
-	return true
+	return true, err
 }

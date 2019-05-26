@@ -22,7 +22,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		l := r.FormValue("lastname")
 		p := r.FormValue("password")
 
-		taken := repository.IsUserNameTaken(un)
+		taken, err := repository.IsUserNameTaken(un)
 
 		if taken {
 			http.Error(w, "Username is taken", http.StatusForbidden)
@@ -31,10 +31,13 @@ func RegisterUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		uf := model.UserFactory{}
 		u := uf.CreateUser(un, f, l, p, time.Now().Local())
 
-		repository.WriteUserToDb(u)
+		err = repository.WriteUserToDb(u)
+		if err != nil {
+			http.Error(w, "There was en error writing user to db:"+err.Error(), http.StatusForbidden)
+			return
+		}
 
 		// Sending response
-
 		response := make(map[string]string) // Should switch for security token when we learn about security from Carlos
 		response["access"] = "granted"
 		parsedResponse, err := json.Marshal(response)
@@ -61,9 +64,13 @@ func LoginUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		un := r.FormValue("username")
 		p := r.FormValue("password")
 
-		user := repository.GetUserFromDb(un)
+		user, err := repository.GetUserFromDb(un)
+		if err != nil {
+			http.Error(w, "There was en error retrieving user from db:"+err.Error(), http.StatusForbidden)
+			return
+		}
 
-		err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(p))
+		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(p))
 		if err != nil {
 			http.Error(w, "Username and password does not match", http.StatusForbidden)
 			return
