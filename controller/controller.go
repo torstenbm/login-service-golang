@@ -10,6 +10,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func writeResponse(w http.ResponseWriter, value string, message string) {
+	response := make(map[string]string)
+	response[value] = message
+
+	parsedResponse, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(parsedResponse)
+	return
+}
+
 // RegisterUser : Handles registering of users, writes user to DB and sends back response
 func RegisterUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -25,7 +41,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		taken, err := repository.IsUserNameTaken(un)
 
 		if taken {
-			http.Error(w, "Username is taken", http.StatusForbidden)
+			writeResponse(w, "error", "Username is taken: "+err.Error())
 			return
 		}
 		uf := model.UserFactory{}
@@ -33,22 +49,13 @@ func RegisterUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		err = repository.WriteUserToDb(u)
 		if err != nil {
-			http.Error(w, "There was en error writing user to db:"+err.Error(), http.StatusForbidden)
+			writeResponse(w, "error", "There was en error writing user to db: "+err.Error())
 			return
 		}
 
-		// Sending response
-		response := make(map[string]string) // Should switch for security token when we learn about security from Carlos
-		response["access"] = "granted"
-		parsedResponse, err := json.Marshal(response)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusForbidden)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(parsedResponse)
+		// Sending access response
+		writeResponse(w, "access", "granted") // Should switch for security token when we learn about security from Carlos
+		return
 	}
 
 }
@@ -66,29 +73,19 @@ func LoginUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		user, err := repository.GetUserFromDb(un)
 		if err != nil {
-			http.Error(w, "There was en error retrieving user from db:"+err.Error(), http.StatusForbidden)
+			writeResponse(w, "error", "There was en error retrieving user from db: "+err.Error())
 			return
 		}
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(p))
 		if err != nil {
-			http.Error(w, "Username and password does not match", http.StatusForbidden)
+			writeResponse(w, "error", "Username and password does not match: "+err.Error())
 			return
 		}
 
-		// Sending response
-		response := make(map[string]string) // Should switch for security token when we learn about security from Carlos
-		response["access"] = "granted"
-
-		parsedResponse, err := json.Marshal(response)
-		if err != nil {
-			http.Error(w, "Bad request", http.StatusForbidden)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(parsedResponse)
+		// Sending access response
+		writeResponse(w, "access", "granted") // Should switch for security token when we learn about security from Carlos
+		return
 	}
 }
 
