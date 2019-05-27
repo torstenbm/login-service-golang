@@ -41,7 +41,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		taken, err := repository.IsUserNameTaken(un)
 
 		if taken {
-			writeResponse(w, "error", "Username is taken: "+err.Error())
+			writeResponse(w, "error", "Username is taken")
 			return
 		}
 		uf := model.UserFactory{}
